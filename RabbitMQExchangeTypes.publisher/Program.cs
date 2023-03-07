@@ -1,5 +1,4 @@
-﻿
-using System.Text;
+﻿using System.Text;
 using RabbitMQ.Client;
 
 var factory = new ConnectionFactory();
@@ -11,11 +10,12 @@ var channel = connection.CreateModel();
 var queueName = "hello-queue";
 channel.QueueDeclare(queueName, true, false, false);
 
-string message = "hello world";
-
-var messageBody = Encoding.UTF8.GetBytes(message);
-
-channel.BasicPublish(string.Empty, "hello-queue", null, messageBody);
+Enumerable.Range(0, 100).ToList().ForEach(i =>
+{
+    var message = $"hello world {i}";
+    var messageBody = Encoding.UTF8.GetBytes(message);
+    channel.BasicPublish(string.Empty, queueName, null, messageBody);
+});
 
 Console.WriteLine("Mesaj gönderilmiştir");
 
