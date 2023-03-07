@@ -8,11 +8,13 @@ factory.Uri = new Uri("amqps://hmdtzelt:1GHaeNWNZBVBux7YQFkpa_74fee5eLwY@hawk.rm
 using var connection = factory.CreateConnection();
 
 var channel = connection.CreateModel();
-var queueName = "hello-queue";
+var randomQueueName = channel.QueueDeclare().QueueName;
+
+channel.QueueBind(randomQueueName, "hello-fanout-exchange", string.Empty, null);
 var consumer = new EventingBasicConsumer(channel);
 
-channel.BasicQos(0,2,false);
-channel.BasicConsume(queue: queueName, false, consumer);
+channel.BasicQos(0,1,false);
+channel.BasicConsume(queue: randomQueueName, false, consumer);
 
 consumer.Received += (model, ea) =>
 {
