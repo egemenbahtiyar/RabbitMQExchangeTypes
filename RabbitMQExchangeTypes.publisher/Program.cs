@@ -17,32 +17,31 @@ internal class Program
         factory.Uri = new Uri("amqps://hmdtzelt:1GHaeNWNZBVBux7YQFkpa_74fee5eLwY@hawk.rmq.cloudamqp.com/hmdtzelt");
 
         using var connection = factory.CreateConnection();
+
         var channel = connection.CreateModel();
+        var exhangeName = "hello-topic-exchange";
 
-        var exhangeName = "hello-direct-exchange";
-        channel.ExchangeDeclare(exhangeName, ExchangeType.Direct, true, false, null);
+        channel.ExchangeDeclare(exhangeName, durable: true, type: ExchangeType.Topic);
+        
 
-        Enum.GetNames(typeof(LogNames)).ToList().ForEach(x =>
+        Random rnd = new Random();
+        Enumerable.Range(1, 50).ToList().ForEach(x =>
         {
-            var routeKey = $"route-{x}";
-            var queueName = $"direct-queue-{x}";
-            channel.QueueDeclare(queueName, true, false, false);
 
-            channel.QueueBind(queueName, exhangeName,routeKey,null);
+            LogNames log1 = (LogNames)rnd.Next(1, 5);
+            LogNames log2 = (LogNames)rnd.Next(1, 5);
+            LogNames log3 = (LogNames)rnd.Next(1, 5);
 
-        });
-
-        Enumerable.Range(0, 100).ToList().ForEach(i =>
-        {
-            LogNames logName = (LogNames) new Random().Next(1, 5);
-            var message = $"{logName} - {i}";
+            var routeKey = $"{log1}.{log2}.{log3}";
+            string message = $"log-type: {log1}-{log2}-{log3}";
             var messageBody = Encoding.UTF8.GetBytes(message);
-            var routeKey = $"route-{logName}";
-            channel.BasicPublish(exhangeName, routeKey, null, messageBody);
+            channel.BasicPublish(exhangeName,routeKey, null, messageBody);
+
             Console.WriteLine($"Log gönderilmiştir : {message}");
+
         });
 
-        Console.WriteLine("Mesaj gönderilmiştir...");
+
 
         Console.ReadLine();
     }

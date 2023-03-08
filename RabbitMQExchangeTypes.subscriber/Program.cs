@@ -8,20 +8,30 @@ factory.Uri = new Uri("amqps://hmdtzelt:1GHaeNWNZBVBux7YQFkpa_74fee5eLwY@hawk.rm
 using var connection = factory.CreateConnection();
 
 var channel = connection.CreateModel();
+         
 
+channel.BasicQos(0, 1, false);
 var consumer = new EventingBasicConsumer(channel);
 
-channel.BasicQos(0,2,false);
-channel.BasicConsume("direct-queue-Info", false, consumer);
+var queueName = channel.QueueDeclare().QueueName;
+var routekey = "*.Error.*";
+var exhangeName = "hello-topic-exchange";
+channel.QueueBind(queueName, exhangeName, routekey);
 
-consumer.Received += (model, ea) =>
+channel.BasicConsume(queueName,false, consumer);
+
+Console.WriteLine("Logları dinleniyor...");
+
+consumer.Received += (object sender, BasicDeliverEventArgs e) =>
 {
-    Thread.Sleep(2000);
-    var body = ea.Body.ToArray();
-    var message = Encoding.UTF8.GetString(body);
-    Console.WriteLine($"Mesaj alındı: {message}");
-    channel.BasicAck(ea.DeliveryTag, false);
-};
+    var message = Encoding.UTF8.GetString(e.Body.ToArray());
 
+    Thread.Sleep(1500);
+    Console.WriteLine("Gelen Mesaj:" + message);
+
+    // File.AppendAllText("log-critical.txt", message+ "\n");
+
+    channel.BasicAck(e.DeliveryTag, false);
+};
 
 Console.ReadLine();
